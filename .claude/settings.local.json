@@ -24,7 +24,17 @@
       "Bash(git init:*)",
       "Bash(git branch:*)",
       "Bash(git remote add:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: Tactical Ops Kanban with MCP Server\n\n- Complete Next.js Kanban board application\n- MCP Server integration for Claude Desktop\n- Network setup scripts for team collaboration\n- Server IP: 192.168.0.22:3000\n- Installation scripts and documentation\n- API endpoints for tasks, columns, and board management\n\nFeatures:\n- Drag & drop task management\n- Real-time board updates\n- MCP tools for Claude integration\n- Network deployment ready\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git config:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(netsh advfirewall firewall show rule:*)",
+      "Bash(netsh advfirewall:*)",
+      "Bash(wmic:*)",
+      "Bash(Get-NetFirewallRule -DisplayName \"Next.js Dev Server - Tactical Ops Kanban\")",
+      "Bash(Select-Object DisplayName, Enabled, Profile, Direction, Action)",
+      "Bash(Format-List)"
     ],
     "deny": [],
     "ask": []
