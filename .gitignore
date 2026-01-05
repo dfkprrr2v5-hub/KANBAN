@@ -40,5 +40,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# MCP server data storage
+# MCP server data storage (multi-project)
 /data/board.json
+/data/board.json.backup
+/data/projects.json
+/data/boards/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Temporary files
+NUL
