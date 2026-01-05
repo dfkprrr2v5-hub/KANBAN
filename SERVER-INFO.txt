@@ -1,0 +1,59 @@
+====================================
+INFORMAÇÕES DO SERVIDOR KANBAN
+====================================
+
+IP DO SERVIDOR: 192.168.0.22
+PORTA: 3000 (ou 3001 se 3000 estiver ocupada)
+
+URL COMPLETA: http://192.168.0.22:3000
+
+====================================
+CONFIGURAÇÃO PARA O TIME
+====================================
+
+Cada membro do time deve adicionar isto no arquivo:
+%APPDATA%\Claude\claude_desktop_config.json
+
+{
+  "mcpServers": {
+    "tactical-ops-kanban": {
+      "command": "node",
+      "args": ["C:\\caminho\\para\\tactical-ops-kanban\\mcp-server.js"],
+      "env": {
+        "MCP_API_HOST": "http://192.168.0.22:3000"
+      }
+    }
+  }
+}
+
+IMPORTANTE: Substituir "C:\\caminho\\para\\tactical-ops-kanban\\mcp-server.js"
+pelo caminho real onde o mcp-server.js está no computador de cada pessoa!
+
+====================================
+PASSOS PARA INICIAR O SERVIDOR
+====================================
+
+1. Abra um Prompt de Comando
+2. Navegue até a pasta: cd C:\Users\mathe\OneDrive\Desktop\App\tactical-ops-kanban
+3. Execute: npm run dev
+4. Aguarde até ver: "Ready in XXXms"
+5. Mantenha esta janela aberta enquanto o time usar
+
+====================================
+TESTAR SE ESTÁ FUNCIONANDO
+====================================
+
+Abra o navegador e acesse:
+http://192.168.0.22:3000
+
+Você deve ver a interface do Kanban!
+
+====================================
+FIREWALL (Se necessário)
+====================================
+
+Se o time não conseguir conectar, execute como Administrador:
+
+netsh advfirewall firewall add rule name="Kanban Server" dir=in action=allow protocol=TCP localport=3000
+
+====================================

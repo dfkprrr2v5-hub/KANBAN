@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "tactical-ops-kanban": {
+      "command": "node",
+      "args": ["mcp-server.js"],
+      "cwd": ".",
+      "transport": "stdio",
+      "env": {}
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(npx tsc:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(dir \"%USERPROFILE%\\.claude\" /b)",
+      "Bash(dir \"C:\\Users\\mathe\\.claude\" /b)",
+      "Bash(dir \"%APPDATA%\\Claude\" /b)",
+      "Bash(dir \"%LOCALAPPDATA%\\Claude\" /b)",
+      "Bash(dir \"C:\\Users\\mathe\\.claude\\agents\" /b)",
+      "Bash(npm install:*)",
+      "Bash(echo $APPDATA)",
+      "Bash(node:*)",
+      "Bash(netstat:*)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(dir /b /s *.mcp.*)",
+      "Bash(dir:*)",
+      "Bash(ipconfig:*)",
+      "Bash(powershell -Command \"Stop-Process -Id 5424 -Force\")",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "tactical-ops-kanban"
+  ]
+}
