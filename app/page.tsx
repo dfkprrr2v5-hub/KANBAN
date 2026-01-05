@@ -2,17 +2,35 @@
 
 import { useEffect, useState } from 'react';
 import { useBoardStore } from '@/lib/store/boardStore';
+import { useProjectStore } from '@/lib/store/projectStore';
 import { Board } from '@/components/board/Board';
 
 export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
   const loadBoard = useBoardStore((state) => state.loadBoard);
+  const loadProjects = useProjectStore((state) => state.loadProjects);
   const isLoading = useBoardStore((state) => state.isLoading);
   const error = useBoardStore((state) => state.error);
 
   useEffect(() => {
-    // Load board from API on mount
-    loadBoard().then(() => setIsLoaded(true));
+    // Load projects first, then load board
+    const initialize = async () => {
+      try {
+        console.log('[App] Loading projects...');
+        await loadProjects();
+
+        console.log('[App] Loading board...');
+        await loadBoard();
+
+        console.log('[App] Initialization complete');
+        setIsLoaded(true);
+      } catch (error) {
+        console.error('[App] Initialization failed:', error);
+        setIsLoaded(true); // Show error state
+      }
+    };
+
+    initialize();
 
     // Auto-refresh every 5 seconds to sync with MCP changes
     const interval = setInterval(() => {
@@ -21,7 +39,7 @@ export default function Home() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [loadBoard]);
+  }, [loadBoard, loadProjects]);
 
   if (!isLoaded || isLoading) {
     return (

@@ -1,11 +1,12 @@
 'use client';
 
-import { Keyboard, Sparkles } from 'lucide-react';
+import { Keyboard, Sparkles, Menu } from 'lucide-react';
 import { SearchButton } from '@/components/search/SearchButton';
 import { UndoRedoControls } from '@/components/ui/UndoRedoControls';
 import { Button } from '@/components/ui/Button';
 import { useBoardStore } from '@/lib/store/boardStore';
 import { useAIStore } from '@/lib/store/aiStore';
+import { useUIStore } from '@/lib/store/uiStore';
 import { cn } from '@/lib/utils/cn';
 
 interface BoardHeaderProps {
@@ -18,6 +19,7 @@ export const BoardHeader = ({ onUndo, onRedo }: BoardHeaderProps) => {
   const cardCount = useBoardStore((state) => Object.keys(state.board.cards).length);
   const columnCount = useBoardStore((state) => state.board.columns.length);
   const openAIChat = useAIStore((state) => state.openChat);
+  const toggleSidebar = useUIStore((state) => state.toggleSidebar);
 
   const showShortcuts = () => {
     window.dispatchEvent(new CustomEvent('show-shortcuts'));
@@ -31,8 +33,17 @@ export const BoardHeader = ({ onUndo, onRedo }: BoardHeaderProps) => {
         'bg-background-primary/80 backdrop-blur-sm'
       )}
     >
-      {/* Left: Title and Stats */}
+      {/* Left: Projects Button + Title and Stats */}
       <div className="flex items-center gap-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleSidebar}
+          className="flex items-center gap-2"
+          title="Projects Menu"
+        >
+          <Menu className="w-4 h-4" />
+        </Button>
         <h1 className="text-2xl font-mono font-bold text-accent-primary tracking-wider">
           ▢ {boardTitle}
         </h1>

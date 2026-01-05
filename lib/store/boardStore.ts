@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { Board, Card, Column } from '@/types';
 import { apiClient } from '@/lib/services/apiClient';
+import { useProjectStore } from './projectStore';
 
 interface BoardState {
   board: Board;
@@ -37,8 +38,9 @@ interface BoardState {
   setActiveColumn: (columnId: string | null) => void;
 }
 
-const getDefaultBoard = (): Board => ({
+const getDefaultBoard = (projectId: string = 'default'): Board => ({
   id: 'default-board',
+  projectId,
   title: 'Tactical Operations',
   columns: [],
   cards: {},
@@ -57,7 +59,14 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   loadBoard: async () => {
     set({ isLoading: true, error: null });
     try {
-      const board = await apiClient.getBoard();
+      const currentProjectId = useProjectStore.getState().currentProjectId;
+      if (!currentProjectId) {
+        console.warn('[BoardStore] No current project ID');
+        set({ isLoading: false });
+        return;
+      }
+
+      const board = await apiClient.getBoard(currentProjectId);
       set({ board, isLoading: false });
     } catch (error) {
       console.error('Failed to load board:', error);
@@ -68,7 +77,10 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   // Refresh board from API
   refreshBoard: async () => {
     try {
-      const board = await apiClient.getBoard();
+      const currentProjectId = useProjectStore.getState().currentProjectId;
+      if (!currentProjectId) return;
+
+      const board = await apiClient.getBoard(currentProjectId);
       set({ board });
     } catch (error) {
       console.error('Failed to refresh board:', error);
@@ -78,12 +90,17 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   // Add card via API
   addCard: async (columnId, title, description) => {
     try {
+      const currentProjectId = useProjectStore.getState().currentProjectId;
+      if (!currentProjectId) {
+        throw new Error('No current project');
+      }
+
       await apiClient.createTask({
         title,
         description,
         columnId,
         priority: 'medium',
-      });
+      }, currentProjectId);
       // Refresh board to get updated state
       await get().refreshBoard();
     } catch (error) {
@@ -95,7 +112,10 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   // Update card via API
   updateCard: async (cardId, updates) => {
     try {
-      await apiClient.updateTask(cardId, updates);
+      const currentProjectId = useProjectStore.getState().currentProjectId;
+      if (!currentProjectId) throw new Error('No current project');
+
+      await apiClient.updateTask(cardId, updates, currentProjectId);
       // Refresh board to get updated state
       await get().refreshBoard();
     } catch (error) {
@@ -107,7 +127,10 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   // Delete card via API
   deleteCard: async (cardId) => {
     try {
-      await apiClient.deleteTask(cardId);
+      const currentProjectId = useProjectStore.getState().currentProjectId;
+      if (!currentProjectId) throw new Error('No current project');
+
+      await apiClient.deleteTask(cardId, currentProjectId);
       // Refresh board to get updated state
       await get().refreshBoard();
     } catch (error) {
@@ -164,14 +187,22 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     });
 
     // Sync with API in background
-    apiClient.updateTask(cardId, { columnId: targetColumnId }).catch(console.error);
+    const currentProjectId = useProjectStore.getState().currentProjectId;
+    if (currentProjectId) {
+      apiClient.updateTask(cardId, { columnId: targetColumnId }, currentProjectId).catch(console.error);
+    }
   },
 
   // Add column via API
   addColumn: async (title) => {
     console.log('[BoardStore] addColumn called with title:', title);
     try {
-      await apiClient.createColumn(title);
+      const currentProjectId = useProjectStore.getState().currentProjectId;
+      if (!currentProjectId) {
+        throw new Error('No current project');
+      }
+
+      await apiClient.createColumn(title, currentProjectId);
       console.log('[BoardStore] Column created via API');
       // Refresh board to get updated state
       await get().refreshBoard();
@@ -185,8 +216,11 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   // Update column via API
   updateColumn: async (columnId, updates) => {
     try {
+      const currentProjectId = useProjectStore.getState().currentProjectId;
+      if (!currentProjectId) throw new Error('No current project');
+
       if (updates.title) {
-        await apiClient.updateColumn(columnId, updates.title);
+        await apiClient.updateColumn(columnId, updates.title, currentProjectId);
         // Refresh board to get updated state
         await get().refreshBoard();
       }
@@ -199,7 +233,10 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   // Delete column via API
   deleteColumn: async (columnId) => {
     try {
-      await apiClient.deleteColumn(columnId);
+      const currentProjectId = useProjectStore.getState().currentProjectId;
+      if (!currentProjectId) throw new Error('No current project');
+
+      await apiClient.deleteColumn(columnId, currentProjectId);
       // Refresh board to get updated state
       await get().refreshBoard();
     } catch (error) {

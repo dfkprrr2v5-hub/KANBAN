@@ -31,6 +31,7 @@ import { ShortcutsModal } from '@/components/ui/ShortcutsModal';
 import { AICommandChat } from '@/components/ai/AICommandChat';
 import { GridPattern } from '@/components/ui/GridPattern';
 import { ScanLines } from '@/components/ui/ScanLines';
+import { ProjectSidebar } from '@/components/sidebar/ProjectSidebar';
 
 export const Board = () => {
   const board = useBoardStore((state) => state.board);
@@ -153,6 +154,9 @@ export const Board = () => {
       {/* Background effects */}
       <GridPattern />
       <ScanLines />
+
+      {/* Project Sidebar */}
+      <ProjectSidebar />
 
       {/* Search Bar */}
       <SearchBar />

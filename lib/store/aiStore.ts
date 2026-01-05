@@ -9,11 +9,22 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export interface PendingAction {
+  type: 'create_task' | 'create_project';
+  title: string;
+  suggestedDescription: string;
+  columnName?: string;
+  columnId?: string;
+  priority?: 'low' | 'medium' | 'high' | 'critical';
+  projectName?: string;
+}
+
 interface AIState {
   isOpen: boolean;
   messages: ChatMessage[];
   isLoading: boolean;
   error: string | null;
+  pendingAction: PendingAction | null;
 
   // Actions
   openChat: () => void;
@@ -23,6 +34,7 @@ interface AIState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearMessages: () => void;
+  setPendingAction: (action: PendingAction | null) => void;
 }
 
 export const useAIStore = create<AIState>((set) => ({
@@ -30,6 +42,7 @@ export const useAIStore = create<AIState>((set) => ({
   messages: [],
   isLoading: false,
   error: null,
+  pendingAction: null,
 
   openChat: () => set({ isOpen: true }),
   closeChat: () => set({ isOpen: false }),
@@ -49,5 +62,6 @@ export const useAIStore = create<AIState>((set) => ({
 
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
-  clearMessages: () => set({ messages: [] }),
+  clearMessages: () => set({ messages: [], pendingAction: null }),
+  setPendingAction: (action) => set({ pendingAction: action }),
 }));

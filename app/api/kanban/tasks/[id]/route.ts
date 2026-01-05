@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readBoard, writeBoard } from '@/lib/data/fileStorage';
+import {
+  readBoardForProject,
+  writeBoardForProject,
+  getDefaultProjectId,
+} from '@/lib/data/fileStorage';
 import { Card } from '@/types';
 
 export async function GET(
@@ -8,7 +12,14 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const board = readBoard();
+    const searchParams = request.nextUrl.searchParams;
+    const projectId = searchParams.get('projectId') || getDefaultProjectId();
+
+    if (!projectId) {
+      return NextResponse.json({ error: 'No project found' }, { status: 404 });
+    }
+
+    const board = readBoardForProject(projectId);
     if (!board) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
@@ -33,10 +44,17 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
+    const searchParams = request.nextUrl.searchParams;
+    const projectId = searchParams.get('projectId') || getDefaultProjectId();
+
+    if (!projectId) {
+      return NextResponse.json({ error: 'No project found' }, { status: 404 });
+    }
+
     const body = await request.json();
     const { title, description, priority, columnId } = body;
 
-    const board = readBoard();
+    const board = readBoardForProject(projectId);
     if (!board) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
@@ -84,7 +102,7 @@ export async function PUT(
     board.cards[id] = updatedCard;
     board.updatedAt = now;
 
-    writeBoard(board);
+    writeBoardForProject(projectId, board);
 
     return NextResponse.json({ card: updatedCard });
   } catch (error) {
@@ -101,7 +119,14 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const board = readBoard();
+    const searchParams = request.nextUrl.searchParams;
+    const projectId = searchParams.get('projectId') || getDefaultProjectId();
+
+    if (!projectId) {
+      return NextResponse.json({ error: 'No project found' }, { status: 404 });
+    }
+
+    const board = readBoardForProject(projectId);
     if (!board) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
@@ -123,7 +148,7 @@ export async function DELETE(
 
     board.updatedAt = new Date().toISOString();
 
-    writeBoard(board);
+    writeBoardForProject(projectId, board);
 
     return NextResponse.json({ success: true, message: 'Task deleted' });
   } catch (error) {

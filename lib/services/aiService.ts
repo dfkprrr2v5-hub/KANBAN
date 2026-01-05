@@ -14,10 +14,13 @@ export interface AIAction {
     | 'delete_column'
     | 'board_summary'
     | 'ask_clarification'
+    | 'suggest_description'
+    | 'create_project'
     | 'error';
   data?: {
     title?: string;
     description?: string;
+    suggestedDescription?: string;
     columnId?: string;
     columnName?: string;
     newColumnName?: string;
@@ -27,6 +30,8 @@ export interface AIAction {
     question?: string;
     summary?: string;
     message?: string;
+    projectName?: string;
+    projectDescription?: string;
   };
 }
 
@@ -58,15 +63,17 @@ CURRENT BOARD STATE:
 - Cards: ${JSON.stringify(cards.slice(0, 20))} ${cards.length > 20 ? `... and ${cards.length - 20} more` : ''}
 
 AVAILABLE ACTIONS:
-1. create_card - Create a new card/task (needs: title, columnId or columnName, optional: description, priority)
-2. move_card - Move a card to another column (needs: cardId, columnId or columnName)
-3. delete_card - Delete a card (needs: cardId)
-4. update_card - Update card details (needs: cardId, optional: title, description, priority)
-5. create_column - Create a new column/sector (needs: title) - IMPORTANT: use "title" field for column name
-6. update_column - Rename a column (needs: columnId or columnName, newColumnName)
-7. delete_column - Delete a column (needs: columnId or columnName) - WARNING: this deletes all cards in it!
-8. board_summary - Provide a summary of the board
-9. ask_clarification - Ask for more information if needed
+1. suggest_description - ALWAYS use this when user wants to create a task/project (needs: title, suggestedDescription, columnName/columnId for tasks, projectName for projects)
+2. create_card - Create a new card/task after user confirms description (needs: title, description, columnId or columnName, optional: priority)
+3. create_project - Create a new project after user confirms description (needs: projectName, projectDescription)
+4. move_card - Move a card to another column (needs: cardId, columnId or columnName)
+5. delete_card - Delete a card (needs: cardId)
+6. update_card - Update card details (needs: cardId, optional: title, description, priority)
+7. create_column - Create a new column/sector (needs: title) - IMPORTANT: use "title" field for column name
+8. update_column - Rename a column (needs: columnId or columnName, newColumnName)
+9. delete_column - Delete a column (needs: columnId or columnName) - WARNING: this deletes all cards in it!
+10. board_summary - Provide a summary of the board
+11. ask_clarification - Ask for more information if needed
 
 RESPONSE FORMAT:
 Always respond with valid JSON in this exact format:
@@ -82,20 +89,23 @@ Always respond with valid JSON in this exact format:
 
 RULES:
 1. Respond in the SAME LANGUAGE the user used (Portuguese or English)
-2. If information is missing (like column or priority), use ask_clarification action
-3. For create_card: title (required), description (optional), columnId or columnName (required), priority (optional, default: medium)
-4. For create_column: title (required) - ALWAYS use "title" field, NOT "columnName" or "name"
-5. Match column names flexibly: "TODO", "todo", "To Do", "a fazer" should all match the TODO column
-6. Be helpful and conversational
-7. If creating multiple cards, use the cards array in data
+2. **CRITICAL**: When user wants to create a task/project, ALWAYS use suggest_description action FIRST
+3. Generate a helpful, contextual description (2-3 sentences) based on the task/project title
+4. Only use create_card or create_project actions when user explicitly confirms the suggested description
+5. If information is missing (like column or priority), use ask_clarification action
+6. For create_card: title (required), description (required), columnId or columnName (required), priority (optional, default: medium)
+7. For create_column: title (required) - ALWAYS use "title" field, NOT "columnName" or "name"
+8. Match column names flexibly: "TODO", "todo", "To Do", "a fazer" should all match the TODO column
+9. Be helpful and conversational
+10. If creating multiple cards, suggest descriptions for each one
 
 EXAMPLES:
 
 User: "Cria uma task para corrigir o bug de login na coluna TODO"
-Response: {"message": "✅ Card criado com sucesso!", "actions": [{"type": "create_card", "data": {"title": "Corrigir bug de login", "columnName": "TODO", "priority": "medium"}}]}
+Response: {"message": "Vou criar a task 'Corrigir bug de login'. Aqui está uma descrição sugerida:\n\n📝 **Descrição sugerida:**\nInvestigar e corrigir problema de autenticação que impede usuários de fazer login. Verificar validação de credenciais, gerenciamento de sessão e tratamento de erros no fluxo de autenticação.\n\n✅ Confirmar para criar a task com essa descrição.", "actions": [{"type": "suggest_description", "data": {"title": "Corrigir bug de login", "suggestedDescription": "Investigar e corrigir problema de autenticação que impede usuários de fazer login. Verificar validação de credenciais, gerenciamento de sessão e tratamento de erros no fluxo de autenticação.", "columnName": "TODO", "priority": "medium"}}]}
 
 User: "Create a high priority task to fix the navbar"
-Response: {"message": "✅ Card created successfully!", "actions": [{"type": "create_card", "data": {"title": "Fix the navbar", "columnName": "TODO", "priority": "high"}}]}
+Response: {"message": "I'll create the task 'Fix the navbar'. Here's a suggested description:\n\n📝 **Suggested description:**\nResolve navigation bar display and functionality issues. Check responsive design, menu interactions, and styling consistency across different screen sizes.\n\n✅ Confirm to create the task with this description.", "actions": [{"type": "suggest_description", "data": {"title": "Fix the navbar", "suggestedDescription": "Resolve navigation bar display and functionality issues. Check responsive design, menu interactions, and styling consistency across different screen sizes.", "columnName": "TODO", "priority": "high"}}]}
 
 User: "Create a new column called Testing"
 Response: {"message": "✅ Column created successfully!", "actions": [{"type": "create_column", "data": {"title": "Testing"}}]}

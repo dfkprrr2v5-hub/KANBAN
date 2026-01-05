@@ -1,17 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readBoard, writeBoard } from '@/lib/data/fileStorage';
+import {
+  readBoardForProject,
+  writeBoardForProject,
+  getDefaultProjectId,
+} from '@/lib/data/fileStorage';
 import { generateId } from '@/lib/utils/id-generator';
 import { Card } from '@/types';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const board = readBoard();
+    const searchParams = request.nextUrl.searchParams;
+    const projectId = searchParams.get('projectId') || getDefaultProjectId();
+
+    if (!projectId) {
+      return NextResponse.json({ cards: [] }, { status: 200 });
+    }
+
+    const board = readBoardForProject(projectId);
     if (!board) {
-      return NextResponse.json({ cards: [] });
+      return NextResponse.json({ cards: [] }, { status: 200 });
     }
 
     const cards = Object.values(board.cards);
-    return NextResponse.json({ cards });
+    return NextResponse.json({ cards }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch tasks', details: String(error) },
@@ -22,6 +33,16 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const projectId = searchParams.get('projectId') || getDefaultProjectId();
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'No project specified or found' },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const { title, description = '', columnId, columnName, priority = 'medium' } = body;
 
@@ -29,7 +50,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    const board = readBoard();
+    const board = readBoardForProject(projectId);
     if (!board) {
       return NextResponse.json({ error: 'Board not initialized' }, { status: 500 });
     }
@@ -82,7 +103,7 @@ export async function POST(request: NextRequest) {
     );
     board.updatedAt = now;
 
-    writeBoard(board);
+    writeBoardForProject(projectId, board);
 
     return NextResponse.json({ card: newCard }, { status: 201 });
   } catch (error) {

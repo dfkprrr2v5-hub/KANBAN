@@ -3,6 +3,7 @@ import { Card } from './card';
 
 export interface Board {
   id: string;
+  projectId: string;
   title: string;
   columns: Column[];
   cards: Record<string, Card>;

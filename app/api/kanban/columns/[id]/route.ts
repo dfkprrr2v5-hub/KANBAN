@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readBoard, writeBoard } from '@/lib/data/fileStorage';
+import {
+  readBoardForProject,
+  writeBoardForProject,
+  getDefaultProjectId,
+} from '@/lib/data/fileStorage';
 
 export async function PUT(
   request: NextRequest,
@@ -7,10 +11,17 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
+    const searchParams = request.nextUrl.searchParams;
+    const projectId = searchParams.get('projectId') || getDefaultProjectId();
+
+    if (!projectId) {
+      return NextResponse.json({ error: 'No project found' }, { status: 404 });
+    }
+
     const body = await request.json();
     const { title } = body;
 
-    const board = readBoard();
+    const board = readBoardForProject(projectId);
     if (!board) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
@@ -26,7 +37,7 @@ export async function PUT(
 
     board.updatedAt = new Date().toISOString();
 
-    writeBoard(board);
+    writeBoardForProject(projectId, board);
 
     return NextResponse.json({ column: board.columns[columnIndex] });
   } catch (error) {
@@ -43,7 +54,14 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const board = readBoard();
+    const searchParams = request.nextUrl.searchParams;
+    const projectId = searchParams.get('projectId') || getDefaultProjectId();
+
+    if (!projectId) {
+      return NextResponse.json({ error: 'No project found' }, { status: 404 });
+    }
+
+    const board = readBoardForProject(projectId);
     if (!board) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
@@ -63,7 +81,7 @@ export async function DELETE(
 
     board.updatedAt = new Date().toISOString();
 
-    writeBoard(board);
+    writeBoardForProject(projectId, board);
 
     return NextResponse.json({ success: true, message: 'Column deleted' });
   } catch (error) {

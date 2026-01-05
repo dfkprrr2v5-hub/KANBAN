@@ -1,16 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readBoard, writeBoard } from '@/lib/data/fileStorage';
+import {
+  readBoardForProject,
+  writeBoardForProject,
+  getDefaultProjectId,
+} from '@/lib/data/fileStorage';
 import { generateId } from '@/lib/utils/id-generator';
 import { Column } from '@/types';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const board = readBoard();
-    if (!board) {
-      return NextResponse.json({ columns: [] });
+    const searchParams = request.nextUrl.searchParams;
+    const projectId = searchParams.get('projectId') || getDefaultProjectId();
+
+    if (!projectId) {
+      return NextResponse.json({ columns: [] }, { status: 200 });
     }
 
-    return NextResponse.json({ columns: board.columns });
+    const board = readBoardForProject(projectId);
+    if (!board) {
+      return NextResponse.json({ columns: [] }, { status: 200 });
+    }
+
+    return NextResponse.json({ columns: board.columns }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch columns', details: String(error) },
@@ -21,6 +32,16 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const projectId = searchParams.get('projectId') || getDefaultProjectId();
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'No project specified or found' },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const { title } = body;
 
@@ -28,7 +49,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    const board = readBoard();
+    const board = readBoardForProject(projectId);
     if (!board) {
       return NextResponse.json({ error: 'Board not initialized' }, { status: 500 });
     }
@@ -46,7 +67,7 @@ export async function POST(request: NextRequest) {
     board.columns.push(newColumn);
     board.updatedAt = now;
 
-    writeBoard(board);
+    writeBoardForProject(projectId, board);
 
     return NextResponse.json({ column: newColumn }, { status: 201 });
   } catch (error) {

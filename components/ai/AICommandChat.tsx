@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Bot, User, Loader2, Sparkles, Trash2 } from 'lucide-react';
+import { X, Send, Bot, User, Loader2, Sparkles, Trash2, Check, Edit3, XCircle } from 'lucide-react';
 import { useAIStore, ChatMessage } from '@/lib/store/aiStore';
 import { useBoardStore } from '@/lib/store/boardStore';
+import { useProjectStore } from '@/lib/store/projectStore';
 import { sendAIMessage, executeAIAction } from '@/lib/services/aiService';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils/cn';
@@ -44,10 +45,11 @@ const MessageBubble = ({ message }: { message: ChatMessage }) => {
 
 export const AICommandChat = () => {
   const [input, setInput] = useState('');
+  const [editedDescription, setEditedDescription] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { isOpen, messages, isLoading, closeChat, addMessage, setLoading, clearMessages } =
+  const { isOpen, messages, isLoading, pendingAction, closeChat, addMessage, setLoading, clearMessages, setPendingAction } =
     useAIStore();
 
   const board = useBoardStore((state) => state.board);
@@ -58,6 +60,8 @@ export const AICommandChat = () => {
   const addColumn = useBoardStore((state) => state.addColumn);
   const updateColumn = useBoardStore((state) => state.updateColumn);
   const deleteColumn = useBoardStore((state) => state.deleteColumn);
+
+  const createProject = useProjectStore((state) => state.createProject);
 
   // Focus input when chat opens
   useEffect(() => {
@@ -104,7 +108,21 @@ export const AICommandChat = () => {
       console.log('[AI] Executing actions:', response.actions);
       for (const action of response.actions) {
         console.log('[AI] Processing action:', action.type, action.data);
-        if (action.type !== 'ask_clarification' && action.type !== 'board_summary' && action.type !== 'error') {
+
+        if (action.type === 'suggest_description') {
+          // Store pending action for confirmation
+          const { title, suggestedDescription, columnName, columnId, priority, projectName } = action.data || {};
+          setPendingAction({
+            type: projectName ? 'create_project' : 'create_task',
+            title: title || projectName || '',
+            suggestedDescription: suggestedDescription || '',
+            columnName,
+            columnId,
+            priority,
+            projectName,
+          });
+          setEditedDescription(suggestedDescription || '');
+        } else if (action.type !== 'ask_clarification' && action.type !== 'board_summary' && action.type !== 'error') {
           const result = executeAIAction(action, board, {
             addCard,
             updateCard,
@@ -125,6 +143,58 @@ export const AICommandChat = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAcceptSuggestion = async () => {
+    if (!pendingAction) return;
+
+    setLoading(true);
+    try {
+      if (pendingAction.type === 'create_task') {
+        // Find column
+        let columnId = pendingAction.columnId;
+        if (!columnId && pendingAction.columnName) {
+          const normalizedName = pendingAction.columnName.toLowerCase().trim();
+          const targetColumn = board.columns.find((c) =>
+            c.title.toLowerCase().includes(normalizedName)
+          );
+          columnId = targetColumn?.id || board.columns[0]?.id;
+        }
+
+        if (columnId) {
+          await addCard(columnId, pendingAction.title, editedDescription);
+          addMessage({
+            role: 'assistant',
+            content: `✅ Task "${pendingAction.title}" created successfully!`,
+          });
+        }
+      } else if (pendingAction.type === 'create_project') {
+        await createProject(pendingAction.title, editedDescription);
+        addMessage({
+          role: 'assistant',
+          content: `✅ Project "${pendingAction.title}" created successfully!`,
+        });
+      }
+
+      setPendingAction(null);
+      setEditedDescription('');
+    } catch (error) {
+      addMessage({
+        role: 'assistant',
+        content: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelSuggestion = () => {
+    setPendingAction(null);
+    setEditedDescription('');
+    addMessage({
+      role: 'assistant',
+      content: '❌ Action cancelled.',
+    });
   };
 
   return (
@@ -236,6 +306,57 @@ export const AICommandChat = () => {
 
               <div ref={messagesEndRef} />
             </div>
+
+            {/* Pending Action Confirmation */}
+            {pendingAction && (
+              <div className="px-4 pb-4 border-t-2 border-accent-primary/30">
+                <div className="bg-accent-primary/10 border-2 border-accent-primary/50 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-accent-primary font-mono font-bold text-sm">
+                    <Sparkles className="w-4 h-4" />
+                    <span>EDIT DESCRIPTION</span>
+                  </div>
+
+                  <textarea
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    placeholder="Edit the suggested description..."
+                    rows={3}
+                    disabled={isLoading}
+                    className={cn(
+                      'w-full px-3 py-2 font-mono text-sm',
+                      'bg-background-tertiary text-text-primary',
+                      'border-2 border-border-primary rounded',
+                      'placeholder:text-text-muted',
+                      'focus:outline-none focus:border-accent-primary',
+                      'disabled:opacity-50 resize-none'
+                    )}
+                  />
+
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleAcceptSuggestion}
+                      disabled={isLoading || !editedDescription.trim()}
+                      variant="primary"
+                      size="sm"
+                      className="flex-1 flex items-center justify-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      Accept
+                    </Button>
+                    <Button
+                      onClick={handleCancelSuggestion}
+                      disabled={isLoading}
+                      variant="ghost"
+                      size="sm"
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Input */}
             <form

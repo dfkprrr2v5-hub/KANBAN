@@ -1,16 +1,50 @@
-import { NextResponse } from 'next/server';
-import { readBoard, writeBoard } from '@/lib/data/fileStorage';
-import { Board } from '@/types';
+import { NextRequest, NextResponse } from 'next/server';
+import {
+  readBoardForProject,
+  writeBoardForProject,
+  getDefaultProjectId,
+  readProjectsIndex,
+} from '@/lib/data/fileStorage';
+import { Board } from '@/types/board';
 
-export async function GET() {
+// GET /api/kanban/board?projectId=xxx
+export async function GET(request: NextRequest) {
   try {
-    const board = readBoard();
+    const searchParams = request.nextUrl.searchParams;
+    let projectId = searchParams.get('projectId');
+
+    // If no projectId provided, use default
+    if (!projectId) {
+      const defaultId = getDefaultProjectId();
+      if (!defaultId) {
+        return NextResponse.json(
+          { error: 'No projects found. Please create a project first.' },
+          { status: 404 }
+        );
+      }
+      projectId = defaultId;
+    }
+
+    // Verify project exists
+    const projectsIndex = readProjectsIndex();
+    const projectExists = projectsIndex?.projects.some((p) => p.id === projectId);
+
+    if (!projectExists) {
+      return NextResponse.json(
+        { error: `Project ${projectId} not found` },
+        { status: 404 }
+      );
+    }
+
+    const board = readBoardForProject(projectId);
 
     if (!board) {
-      // Return default board structure
+      // Create default board for this project
+      const project = projectsIndex?.projects.find((p) => p.id === projectId);
       const defaultBoard: Board = {
-        id: 'default-board',
-        title: 'Tactical Operations',
+        id: `board-${projectId}`,
+        projectId: projectId,
+        title: project?.name || 'Tactical Operations',
         columns: [
           {
             id: 'col-todo',
@@ -40,13 +74,16 @@ export async function GET() {
       };
 
       // Initialize the board file
-      writeBoard(defaultBoard);
+      writeBoardForProject(projectId, defaultBoard);
 
-      return NextResponse.json({ board: defaultBoard });
+      console.log('[API] Created default board for project:', projectId);
+
+      return NextResponse.json({ board: defaultBoard }, { status: 200 });
     }
 
-    return NextResponse.json({ board });
+    return NextResponse.json({ board }, { status: 200 });
   } catch (error) {
+    console.error('[API] Error fetching board:', error);
     return NextResponse.json(
       { error: 'Failed to fetch board', details: String(error) },
       { status: 500 }
