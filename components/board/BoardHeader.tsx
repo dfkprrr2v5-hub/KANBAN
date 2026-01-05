@@ -1,10 +1,12 @@
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
 import { Keyboard, Sparkles, Menu } from 'lucide-react';
 import { SearchButton } from '@/components/search/SearchButton';
 import { UndoRedoControls } from '@/components/ui/UndoRedoControls';
 import { Button } from '@/components/ui/Button';
 import { useBoardStore } from '@/lib/store/boardStore';
+import { useProjectStore } from '@/lib/store/projectStore';
 import { useAIStore } from '@/lib/store/aiStore';
 import { useUIStore } from '@/lib/store/uiStore';
 import { cn } from '@/lib/utils/cn';
@@ -21,8 +23,55 @@ export const BoardHeader = ({ onUndo, onRedo }: BoardHeaderProps) => {
   const openAIChat = useAIStore((state) => state.openChat);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
 
+  const currentProjectId = useProjectStore((state) => state.currentProjectId);
+  const currentProject = useProjectStore((state) =>
+    state.projects.find((p) => p.id === currentProjectId)
+  );
+  const updateProject = useProjectStore((state) => state.updateProject);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus input when entering edit mode
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
   const showShortcuts = () => {
     window.dispatchEvent(new CustomEvent('show-shortcuts'));
+  };
+
+  const handleDoubleClick = () => {
+    if (!currentProject) return;
+    setEditedName(currentProject.name);
+    setIsEditing(true);
+  };
+
+  const handleSave = async () => {
+    if (!currentProject || !editedName.trim() || editedName.trim() === currentProject.name) {
+      setIsEditing(false);
+      return;
+    }
+
+    try {
+      await updateProject(currentProject.id, { name: editedName.trim() });
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to update project name:', error);
+      alert('Failed to update project name');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave();
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+    }
   };
 
   return (
@@ -44,9 +93,37 @@ export const BoardHeader = ({ onUndo, onRedo }: BoardHeaderProps) => {
         >
           <Menu className="w-4 h-4" />
         </Button>
-        <h1 className="text-2xl font-mono font-bold text-accent-primary tracking-wider">
-          ▢ {boardTitle}
-        </h1>
+
+        {/* Editable Project Title */}
+        {isEditing ? (
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-mono font-bold text-accent-primary">▢</span>
+            <input
+              ref={inputRef}
+              type="text"
+              value={editedName}
+              onChange={(e) => setEditedName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={handleSave}
+              maxLength={50}
+              className={cn(
+                'text-2xl font-mono font-bold text-accent-primary tracking-wider',
+                'bg-background-secondary border-2 border-accent-primary rounded px-2 py-1',
+                'focus:outline-none focus:ring-2 focus:ring-accent-primary/50'
+              )}
+              style={{ minWidth: '200px', maxWidth: '400px' }}
+            />
+          </div>
+        ) : (
+          <h1
+            className="text-2xl font-mono font-bold text-accent-primary tracking-wider cursor-pointer hover:opacity-80 transition-opacity"
+            onDoubleClick={handleDoubleClick}
+            title="Double-click to rename project"
+          >
+            ▢ {currentProject?.name || boardTitle}
+          </h1>
+        )}
+
         <div className="hidden md:flex items-center gap-4 text-text-muted text-sm font-mono">
           <span>
             <span className="text-text-primary font-bold">{columnCount}</span> sectors
