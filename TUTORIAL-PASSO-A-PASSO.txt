@@ -1,0 +1,158 @@
+================================================================================
+    TUTORIAL PASSO A PASSO - CONFIGURAÇÃO MCP KANBAN PARA CLAUDE DESKTOP
+================================================================================
+
+📌 ANTES DE COMEÇAR:
+   - Você precisa ter o Node.js instalado
+   - Você precisa ter o Claude Desktop instalado
+   - Você precisa estar na mesma rede que o servidor (192.168.0.22)
+
+================================================================================
+PASSO 1: OBTER O PROJETO
+================================================================================
+
+1.1) Abra o Git Bash ou Prompt de Comando
+
+1.2) Clone o repositório:
+     git clone https://github.com/dfkprrr2v5-hub/KANBAN.git
+
+     OU copie a pasta do servidor/rede compartilhada
+
+1.3) Entre na pasta:
+     cd KANBAN
+
+1.4) ANOTE O CAMINHO COMPLETO:
+     - Clique na barra de endereço do Explorador de Arquivos
+     - Exemplo: C:\Users\SeuNome\KANBAN
+     - COPIE este caminho!
+
+================================================================================
+PASSO 2: INSTALAR DEPENDÊNCIAS
+================================================================================
+
+2.1) No Prompt de Comando, dentro da pasta KANBAN, execute:
+     npm install
+
+2.2) Aguarde... (pode demorar 2-5 minutos)
+
+2.3) Quando terminar, você verá algo como:
+     "added 500 packages in 3m"
+
+================================================================================
+PASSO 3: CONFIGURAR CLAUDE DESKTOP - MODO FÁCIL
+================================================================================
+
+3.1) Duplo clique no arquivo: configure-client.bat
+
+3.2) Quando aparecer:
+     "Enter server IP address [192.168.0.22]:"
+
+     Apenas aperte ENTER (já vem com o IP correto!)
+
+3.3) O script vai criar o arquivo de configuração automaticamente
+
+3.4) Pule para o PASSO 5 (reiniciar Claude)
+
+================================================================================
+PASSO 4: CONFIGURAR CLAUDE DESKTOP - MODO MANUAL
+================================================================================
+
+(Use apenas se o PASSO 3 não funcionou)
+
+4.1) Pressione: Win + R
+
+4.2) Digite: %APPDATA%\Claude
+
+4.3) Aperte: Enter
+
+4.4) Se NÃO existir o arquivo "claude_desktop_config.json":
+     - Clique com botão direito → Novo → Documento de Texto
+     - Renomeie para: claude_desktop_config.json
+     - Clique em SIM para mudar a extensão
+
+4.5) Abra o arquivo "claude_desktop_config.json" com Bloco de Notas
+
+4.6) Cole EXATAMENTE este conteúdo (substitua o caminho!):
+
+{
+  "mcpServers": {
+    "tactical-ops-kanban": {
+      "command": "node",
+      "args": ["C:\\Users\\SeuNome\\KANBAN\\mcp-server.js"],
+      "env": {
+        "MCP_API_HOST": "http://192.168.0.22:3000"
+      }
+    }
+  }
+}
+
+4.7) IMPORTANTE: Substitua "C:\\Users\\SeuNome\\KANBAN" pelo caminho que
+     você anotou no passo 1.4!
+
+4.8) Note que são DUAS barras invertidas: \\
+     Exemplo correto: C:\\Users\\Joao\\KANBAN\\mcp-server.js
+     Exemplo ERRADO:  C:\Users\Joao\KANBAN\mcp-server.js
+
+4.9) Salve o arquivo (Ctrl+S)
+
+================================================================================
+PASSO 5: REINICIAR CLAUDE DESKTOP
+================================================================================
+
+5.1) Feche COMPLETAMENTE o Claude Desktop
+     - Clique no X
+     - Verifique na bandeja do sistema (perto do relógio)
+     - Clique com botão direito no ícone e escolha "Sair"
+
+5.2) Abra o Claude Desktop novamente
+
+5.3) Aguarde carregar completamente
+
+================================================================================
+PASSO 6: TESTAR
+================================================================================
+
+6.1) No Claude Desktop, escreva:
+     "Liste todas as tarefas do kanban"
+
+6.2) Se funcionar, você verá:
+     - O Claude usando ferramentas MCP
+     - Lista de tarefas do board
+
+6.3) Se funcionou: PARABÉNS! ✓ Configuração completa!
+
+================================================================================
+RESOLUÇÃO DE PROBLEMAS
+================================================================================
+
+PROBLEMA: "MCP Server não encontrado"
+SOLUÇÃO:
+  → Verifique o caminho no claude_desktop_config.json
+  → Certifique-se de usar \\ (barras duplas)
+  → Reinicie o Claude Desktop
+
+PROBLEMA: "Cannot find module"
+SOLUÇÃO:
+  → Execute "npm install" novamente na pasta do projeto
+  → Verifique se o arquivo mcp-server.js existe
+
+PROBLEMA: "Failed to connect"
+SOLUÇÃO:
+  → Verifique se está na mesma rede
+  → Teste abrir no navegador: http://192.168.0.22:3000
+  → Pergunte ao administrador se o servidor está rodando
+
+PROBLEMA: "Command 'node' not found"
+SOLUÇÃO:
+  → Você precisa instalar o Node.js
+  → Baixe em: https://nodejs.org/
+
+================================================================================
+DÚVIDAS?
+================================================================================
+
+Entre em contato com o administrador do sistema.
+
+Repositório: https://github.com/dfkprrr2v5-hub/KANBAN
+
+================================================================================
